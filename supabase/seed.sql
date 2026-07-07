@@ -1,0 +1,18 @@
+-- Como criar o primeiro admin diretamente no Supabase:
+--
+-- 1. Crie o usuário em Authentication > Users do painel do Supabase
+--    ou via SQL (requer extensão pgcrypto):
+--
+-- INSERT INTO auth.users (id, email, encrypted_password, email_confirmed_at, raw_user_meta_data)
+-- VALUES (
+--   gen_random_uuid(),
+--   'admin@calendzip.com',
+--   crypt('senha-segura', gen_salt('bf')),
+--   now(),
+--   jsonb_build_object('nome', 'Administrador', 'papel', 'admin')
+-- );
+--
+-- 2. O trigger on_auth_user_created já insere o registro correspondente em public.usarios.
+--    Se necessário, confirme:
+--
+-- UPDATE public.usuarios SET papel = 'admin', ativo = true WHERE email = 'admin@calendzip.com';
