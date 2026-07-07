@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import { getProfile } from '@/lib/auth'
 import { logout } from '@/app/actions/auth'
 import { Button } from '@/components/ui/button'
-import { CalendarDays, Users, FileSpreadsheet, Bell, LogOut, LayoutDashboard, Download, ImageDown } from 'lucide-react'
+import { CalendarDays, Users, FileSpreadsheet, Bell, LogOut, LayoutDashboard, Download, ImageDown, FileDown } from 'lucide-react'
 
 export default async function DashboardLayout({
   children,
@@ -50,6 +50,9 @@ export default async function DashboardLayout({
               </NavLink>
               <NavLink href="/admin/alteracoes" icon={<Bell className="h-4 w-4" />}>
                 Alterações
+              </NavLink>
+              <NavLink href="/admin/backup" icon={<FileDown className="h-4 w-4" />}>
+                Backup PDF
               </NavLink>
             </>
           ) : (

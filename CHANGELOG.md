@@ -1,7 +1,56 @@
 # Changelog — calendZip
 
 Documentação das mudanças feitas em sessão com Claude Code em **2026-07-07**.
-Stack: Next.js 16 (App Router) · React 19 · TypeScript · Tailwind 4 + shadcn/ui (base-ui) · Supabase (Auth + Postgres + Storage) · SheetJS.
+Stack: Next.js 16 (App Router) · React 19 · TypeScript · Tailwind 4 + shadcn/ui (base-ui) · Supabase (Auth + Postgres + Storage) · SheetJS · @react-pdf/renderer.
+
+## ✨ Backup em PDF (sessão de 2026-07-07, continuação)
+
+### O que
+Admin gera um **PDF pesquisável** de um calendário em um intervalo de datas, faz **hard delete** dos mesmos dados do banco principal, e o PDF vai direto pro download. Sem persistência no servidor.
+
+### Por que
+Manter o banco de dados principal sempre enxuto. PDF fica na máquina do admin (organiza como quiser), e o texto nativo do PDF permite `Cmd+F` para pesquisar quando precisar revisitar conteúdo antigo.
+
+### Fluxo
+1. `/admin/backup` → seleciona cliente + data início + data fim
+2. Confirma no dialog (aviso amarelo de delete permanente)
+3. Server: lê entradas + alterações no intervalo → renderiza PDF → DELETE alteracoes → DELETE entradas → responde com o PDF
+4. Browser baixa `backup-<slug>-<inicio>_<fim>.pdf`
+5. Toast mostra quantas entradas e alterações foram removidas
+
+### Estrutura do PDF
+- **Capa** — cliente, calendário, período, gerado em/por, totais (postagens / alterações / imagens referenciadas)
+- **Sumário** — tabela com #, data, plataforma, pilar, tema, status
+- **Detalhe** — 1 página por postagem: campos completos + URLs das imagens + histórico de alterações
+
+### Arquivos
+- `app/api/backup/pdf/route.ts` — POST: query + render + delete + response
+- `app/(dashboard)/admin/backup/page.tsx` — server component com lista de clientes
+- `components/backup-form.tsx` — form com validação + dialog de confirmação + download via blob
+- `components/pdf/backup-document.tsx` — layout do PDF (capa, sumário, detalhe)
+- `lib/utils-backup.ts` — `slugifyCliente`, `formatarDataPtBr`, `nomeArquivoBackup`
+- `app/(dashboard)/layout.tsx` — + "Backup PDF" no nav admin (ícone `FileDown`)
+- `doc/BACKUP.md` — design completo (decisions, riscos, não-objetivos)
+
+### Decisões importantes
+- **Hard delete** (não soft): atende o objetivo de "banco pequeno". Soft delete foi rejeitado porque não encolhe
+- **Sem persistência:** nada no Supabase Storage, Vercel Blob ou Postgres. PDF vai direto pro admin
+- **Ordem do delete:** `alteracoes` primeiro (FK), depois `entradas`. PDF é gerado **antes** do delete
+- **Texto nativo:** PDF renderiza `<Text>` real do @react-pdf/renderer → pesquisável
+- **Validação:** `inicio <= fim`, ambos no formato `YYYY-MM-DD`
+- **Stats no header:** `X-Backup-Stats` (JSON) com contagem de removidos, exibido no toast
+- **Content-Disposition:** suporta UTF-8 (`filename*`) pra nomes com acento
+
+### Dependência
+- `@react-pdf/renderer@^4.5.1` — declarativo (componentes React → PDF), funciona em Vercel serverless, texto nativo
+
+### Limites
+- **Sem restauração a partir do PDF** (não-objetivo)
+- **Sem logs de auditoria** centralizados (admin guarda o arquivo)
+- **Sem limite explícito de tamanho** — para calendários muito grandes (>500 posts), considerar paginar o PDF
+- **Imagens não embutidas no PDF** — só as URLs (admin baixa separadamente se quiser)
+
+---
 
 ---
 
