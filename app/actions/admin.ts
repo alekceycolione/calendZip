@@ -171,6 +171,50 @@ export async function listarAlteracoes(): Promise<AlteracaoComDetalhes[]> {
   return (data || []) as unknown as AlteracaoComDetalhes[]
 }
 
+export type AlteracoesPaginadas = {
+  data: AlteracaoComDetalhes[]
+  totalCount: number
+  page: number
+  pageSize: number
+  totalPages: number
+}
+
+const PAGE_SIZE_PADRAO = 20
+
+export async function listarAlteracoesPaginadas(
+  page: number = 1,
+  pageSize: number = PAGE_SIZE_PADRAO
+): Promise<AlteracoesPaginadas> {
+  await requireAdmin()
+  const supabase = await createClient()
+
+  const paginaAtual = Math.max(1, Math.floor(page))
+  const tamanho = Math.max(1, Math.min(100, Math.floor(pageSize)))
+  const inicio = (paginaAtual - 1) * tamanho
+  const fim = inicio + tamanho - 1
+
+  const { data, error, count } = await supabase
+    .from('alteracoes')
+    .select('*, entradas(numero, tema, data_post, calendario_id), usuarios(nome, email, clientes(nome))', { count: 'exact' })
+    .order('criado_em', { ascending: false })
+    .range(inicio, fim)
+
+  if (error) {
+    throw new Error('Erro ao listar alterações: ' + error.message)
+  }
+
+  const totalCount = count ?? 0
+  const totalPages = totalCount === 0 ? 0 : Math.ceil(totalCount / tamanho)
+
+  return {
+    data: (data || []) as unknown as AlteracaoComDetalhes[],
+    totalCount,
+    page: paginaAtual,
+    pageSize: tamanho,
+    totalPages,
+  }
+}
+
 export async function alternarUsuario(id: string, ativo: boolean) {
   await requireAdmin()
   const supabase = await createClient()

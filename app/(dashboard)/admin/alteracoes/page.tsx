@@ -1,6 +1,6 @@
-import { listarAlteracoes } from '@/app/actions/admin'
-import type { AlteracaoComDetalhes } from '@/app/actions/admin'
+import { listarAlteracoesPaginadas } from '@/app/actions/admin'
 import { ProcessarNotificacoes } from '@/components/processar-notificacoes'
+import { Pagination } from '@/components/pagination'
 import {
   Table,
   TableBody,
@@ -11,8 +11,25 @@ import {
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 
-export default async function AlteracoesPage() {
-  const alteracoes: AlteracaoComDetalhes[] = await listarAlteracoes()
+const PAGE_SIZE = 20
+
+type PageProps = {
+  searchParams: Promise<{ page?: string | string[] }>
+}
+
+function paginaValida(raw: string | string[] | undefined): number {
+  const valor = Array.isArray(raw) ? raw[0] : raw
+  const n = Number.parseInt(valor ?? '1', 10)
+  return Number.isFinite(n) && n >= 1 ? n : 1
+}
+
+export default async function AlteracoesPage({ searchParams }: PageProps) {
+  const { page: pageParam } = await searchParams
+  const page = paginaValida(pageParam)
+  const { data: alteracoes, totalCount, totalPages } = await listarAlteracoesPaginadas(page, PAGE_SIZE)
+
+  const primeiroDaPagina = totalCount === 0 ? 0 : (page - 1) * PAGE_SIZE + 1
+  const ultimoDaPagina = Math.min(page * PAGE_SIZE, totalCount)
 
   return (
     <div className="space-y-6">
@@ -72,6 +89,18 @@ export default async function AlteracoesPage() {
             </TableBody>
           </Table>
         </div>
+
+        {totalCount > 0 && (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-4 border-t">
+            <p className="text-sm text-muted-foreground">
+              Exibindo <span className="font-medium text-foreground">{primeiroDaPagina}</span>–
+              <span className="font-medium text-foreground">{ultimoDaPagina}</span> de{' '}
+              <span className="font-medium text-foreground">{totalCount}</span>{' '}
+              {totalCount === 1 ? 'alteração' : 'alterações'}
+            </p>
+            <Pagination page={page} totalPages={totalPages} basePath="/admin/alteracoes" />
+          </div>
+        )}
       </div>
     </div>
   )
