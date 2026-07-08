@@ -27,7 +27,7 @@ export function coresPlataforma(plataforma: string | null | undefined): Platafor
   if (!nome) {
     return {
       badge: 'bg-muted text-muted-foreground border-border',
-      cardBg: '',
+      cardBg: 'bg-card',
       cardBorda: 'border-border',
       dot: 'bg-muted-foreground/40',
       nome: '',
@@ -35,27 +35,25 @@ export function coresPlataforma(plataforma: string | null | undefined): Platafor
   }
   if (PLATAFORMA_INSTAGRAM_REGEX.test(nome) || PLATAFORMA_STORIES_REGEX.test(nome)) {
     return {
-      badge:
-        'bg-gradient-to-r from-[#F58529] via-[#DD2A7B] to-[#8134AF] text-white border-transparent',
-      cardBg:
-        'bg-gradient-to-r from-orange-500/10 via-pink-500/10 to-purple-500/10',
-      cardBorda: 'border-pink-500/40',
-      dot: 'bg-[#DD2A7B]',
+      badge: 'bg-pink-500 text-white border-transparent',
+      cardBg: 'bg-pink-100 dark:bg-pink-950/30',
+      cardBorda: 'border-pink-300 dark:border-pink-800/50',
+      dot: 'bg-pink-500',
       nome,
     }
   }
   if (PLATAFORMA_LINKEDIN_REGEX.test(nome)) {
     return {
-      badge: 'bg-[#0A66C2] text-white border-transparent',
-      cardBg: 'bg-blue-500/10',
-      cardBorda: 'border-blue-500/40',
-      dot: 'bg-[#0A66C2]',
+      badge: 'bg-blue-600 text-white border-transparent',
+      cardBg: 'bg-blue-100 dark:bg-blue-950/30',
+      cardBorda: 'border-blue-300 dark:border-blue-800/50',
+      dot: 'bg-blue-600',
       nome,
     }
   }
   return {
     badge: 'bg-muted text-muted-foreground border-border',
-    cardBg: '',
+    cardBg: 'bg-card',
     cardBorda: 'border-border',
     dot: 'bg-muted-foreground/40',
     nome,
