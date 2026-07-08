@@ -64,7 +64,9 @@ export function KanbanCard({
       ref={setNodeRef}
       style={style}
       className={cn(
-        'group rounded-lg border bg-card p-3 shadow-sm transition-shadow select-none',
+        'group rounded-lg border p-3 shadow-sm transition-shadow select-none',
+        plataforma.cardBg || 'bg-card',
+        plataforma.cardBorda || 'border-border',
         !disabled && 'hover:shadow-md cursor-grab active:cursor-grabbing',
         disabled && 'cursor-not-allowed opacity-60',
         isDragging && 'shadow-lg ring-2 ring-primary/30 cursor-grabbing'
