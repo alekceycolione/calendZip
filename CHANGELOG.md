@@ -443,3 +443,62 @@ Aplicada a regra 50% na página de export. Tabela do Visualizar Calendários con
 - **Helpers compartilhados:** 4 (`utils-storage.ts`, `utils-cliente*.ts`, `normalizarImagens`, `sanitizarNomeArquivo`)
 - **Reverts:** 1 (tentativa de 540×540 na tabela → voltou a 32×32)
 - **Linhas de changelog:** ~320 (este arquivo)
+
+---
+
+## ✨ Kanban — iterações subsequentes (mesma sessão)
+
+### v2 — Cards arrastáveis
+- Movido `{...attributes} {...listeners}` do botão do grip para o card inteiro
+- `cursor: grab` / `cursor: grabbing` em todo o card
+- Hint no header: "Arraste entre semanas ou sobre outro card para re-agendar (data + hora). Clique para editar."
+- `distance: 6` do PointerSensor preserva click vs drag (mover < 6px = click no dialog)
+
+### v3 — Badges coloridos por plataforma (cores de marca)
+- Instagram/Stories/Reels: badge gradient `#F58529 → #DD2A7B → #8134AF`
+- LinkedIn: badge sólido `#0A66C2`
+- Outras: muted
+- Detecção por regex case-insensitive em `lib/utils-plataforma.ts`
+
+### v4 — Card com tint + borda colorida
+- Instagram: cardBg gradient `orange/pink/purple` 10% opacity, borda `pink-500/40`
+- LinkedIn: cardBg `blue-500/10`, borda `blue-500/40`
+
+### v5 — Cores sólidas pastéis (sem degradê)
+- Instagram: badge `bg-pink-500`, card `bg-pink-100`, borda `border-pink-300`
+- LinkedIn: badge `bg-blue-600`, card `bg-blue-100`, borda `border-blue-300`
+- Dark mode: `dark:bg-pink-950/30` etc.
+
+### v6 — Hora prevista + drop intra-semana
+- Migration `0007_add_hora_prevista.sql`: coluna `hora_prevista TIME NOT NULL` (sem DEFAULT, app fornece)
+- Entradas existentes recebem `'12:00:00'`
+- Index composto `(calendario_id, data_post, hora_prevista)`
+- `reagendarEntrada(id, novaData, novaHora?)` — valida formato, registra diff em `alteracoes`
+- Drop sobre outro card (intra-semana): A e B ficam com data de B; A recebe hora de B − 1h
+- Drop em coluna (cross-semana): preserva dia da semana, hora fica igual
+- Detecção via `entradaPorId(entradas, overId)` para diferenciar card vs coluna
+- Ordenação: `data_post, hora_prevista, numero`
+- Card mostra data + 🕐 hora
+- Dialog tem campo `<input type="time">` ao lado da data
+- Toast inteligente: mostra data+hora, só data, ou só hora
+
+### v7 — Admin pode editar semanas passadas
+- `CalendarioKanban` aceita prop `isAdmin`
+- `disabled` do card: `isPending || (isPast && !isAdmin)`
+- Drag logic pula check de semana passada se admin
+- Cliente continua bloqueado em semanas passadas (não faz sentido reagendar)
+- Past week do admin: `opacity-90` em vez de `opacity-60` (sutil, não parece disabled)
+
+### Arquivos finais da feature
+- `lib/utils-semana.ts` (cálculos de semana, `subtrairHora`, `agruparPorSemana` com sort por hora)
+- `lib/utils-plataforma.ts` (cores sólidas pastéis com dark mode)
+- `app/actions/calendario.ts` (`+reagendarEntrada(id, novaData, novaHora?)`)
+- `components/calendario-kanban.tsx` (drop cross + intra semana, isAdmin)
+- `components/kanban-card.tsx` (draggable, hora visível, cores pastel)
+- `components/kanban-column.tsx` (droppable, opacity por isAdmin)
+- `components/calendario-view-toggle.tsx` (Tabs Tabela | Kanban)
+- `components/calendario-cliente.tsx` (`+viewMode`, `+hora_prevista` no dialog)
+- `app/(dashboard)/admin/calendarios/page.tsx` (`+?view=`, + toggle)
+- `app/(dashboard)/cliente/calendario/page.tsx` (mesmo)
+- `supabase/migrations/0007_add_hora_prevista.sql` ⚠️ **aplicar manualmente no Supabase**
+- `lib/supabase/database.types.ts` (`+hora_prevista` em Row/Insert/Update)
