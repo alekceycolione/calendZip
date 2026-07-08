@@ -191,6 +191,10 @@ export function CalendarioKanban({ entradas: entradasIniciais, onCardClick }: Pr
         </span>
       </div>
 
+      <p className="text-xs text-muted-foreground">
+        Arraste os cards entre as semanas para re-agendar. Clique para editar.
+      </p>
+
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}

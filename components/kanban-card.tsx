@@ -63,29 +63,27 @@ export function KanbanCard({
       ref={setNodeRef}
       style={style}
       className={cn(
-        'group rounded-lg border bg-card p-3 shadow-sm transition-shadow',
-        !disabled && 'hover:shadow-md cursor-pointer',
+        'group rounded-lg border bg-card p-3 shadow-sm transition-shadow select-none',
+        !disabled && 'hover:shadow-md cursor-grab active:cursor-grabbing',
         disabled && 'cursor-not-allowed opacity-60',
-        isDragging && 'shadow-lg ring-2 ring-primary/30'
+        isDragging && 'shadow-lg ring-2 ring-primary/30 cursor-grabbing'
       )}
       onClick={(e) => {
         if (isDragging) return
         onClick?.(entrada)
         e.stopPropagation()
       }}
+      {...attributes}
+      {...listeners}
     >
       <div className="flex items-start gap-2">
         {!disabled && (
-          <button
-            type="button"
-            aria-label="Arrastar para re-agendar"
-            className="mt-0.5 -ml-1 cursor-grab active:cursor-grabbing text-muted-foreground/50 hover:text-foreground touch-none"
-            {...attributes}
-            {...listeners}
-            onClick={(e) => e.stopPropagation()}
+          <span
+            aria-hidden="true"
+            className="mt-0.5 -ml-1 text-muted-foreground/50 group-hover:text-foreground/80"
           >
             <GripVertical className="h-4 w-4" />
-          </button>
+          </span>
         )}
 
         <div className="h-8 w-8 shrink-0 rounded overflow-hidden border bg-muted flex items-center justify-center">
