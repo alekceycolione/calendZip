@@ -7,6 +7,7 @@ import { ImageOff, GripVertical } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import { formatarDataCurta } from '@/lib/utils-semana'
+import { coresPlataforma } from '@/lib/utils-plataforma'
 
 export type KanbanCardEntrada = {
   id: string
@@ -55,6 +56,7 @@ export function KanbanCard({
   }
 
   const statusClass = STATUS_STYLES[entrada.status] || STATUS_STYLES.planejado
+  const plataforma = coresPlataforma(entrada.plataforma)
 
   return (
     <div
@@ -110,9 +112,17 @@ export function KanbanCard({
           </div>
           <p className="mt-1 text-xs text-muted-foreground truncate">
             {formatarDataCurta(entrada.data_post)}
-            {entrada.plataforma ? ` · ${entrada.plataforma}` : ''}
           </p>
-          <div className="mt-1.5">
+          <div className="mt-1.5 flex flex-wrap items-center gap-1">
+            {plataforma.nome && (
+              <Badge
+                variant="outline"
+                className={cn('text-[10px] px-1.5 py-0', plataforma.badge)}
+                title={entrada.plataforma || plataforma.nome}
+              >
+                {plataforma.nome}
+              </Badge>
+            )}
             <Badge variant="outline" className={cn('text-[10px] px-1.5 py-0', statusClass)}>
               {statusLabel(entrada.status)}
             </Badge>
