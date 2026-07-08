@@ -40,13 +40,14 @@ type Entrada = KanbanCardEntrada
 type Props = {
   entradas: Entrada[]
   onCardClick?: (entrada: Entrada) => void
+  isAdmin?: boolean
 }
 
 function entradaPorId(entradas: Entrada[], id: string): Entrada | undefined {
   return entradas.find((e) => e.id === id)
 }
 
-export function CalendarioKanban({ entradas: entradasIniciais, onCardClick }: Props) {
+export function CalendarioKanban({ entradas: entradasIniciais, onCardClick, isAdmin = false }: Props) {
   const [entradas, setEntradas] = useState<Entrada[]>(entradasIniciais)
   const [entradasAnteriores, setEntradasAnteriores] = useState<Entrada[]>(entradasIniciais)
   if (entradasIniciais !== entradasAnteriores) {
@@ -151,7 +152,7 @@ export function CalendarioKanban({ entradas: entradasIniciais, onCardClick }: Pr
       novaHora = undefined
     }
 
-    if (semanaPassada(semanas.find((s) => s.chave === colunaChave)!)) {
+    if (!isAdmin && semanaPassada(semanas.find((s) => s.chave === colunaChave)!)) {
       toast.error('Não dá pra reagendar pra uma semana no passado.')
       prevSnapshotRef.current = null
       return
@@ -250,6 +251,7 @@ export function CalendarioKanban({ entradas: entradasIniciais, onCardClick }: Pr
                 id={s.chave}
                 isPast={isPast}
                 isOver={overColumnId === s.chave && !!dragId}
+                isAdmin={isAdmin}
               >
                 <div className="border-b p-3">
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
@@ -273,7 +275,7 @@ export function CalendarioKanban({ entradas: entradasIniciais, onCardClick }: Pr
                       key={e.id}
                       entrada={e}
                       onClick={onCardClick}
-                      disabled={isPending || isPast}
+                      disabled={isPending || (isPast && !isAdmin)}
                     />
                   ))}
                 </div>

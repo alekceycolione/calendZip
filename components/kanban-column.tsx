@@ -9,15 +9,18 @@ export function KanbanColumn({
   className,
   isPast,
   isOver,
+  isAdmin = false,
 }: {
   id: string
   children: React.ReactNode
   className?: string
   isPast?: boolean
   isOver?: boolean
+  isAdmin?: boolean
 }) {
   const { setNodeRef, isOver: over } = useDroppable({ id, data: { type: 'coluna' } })
   const ativo = isOver ?? over
+  const bloqueada = isPast && !isAdmin
 
   return (
     <div
@@ -25,8 +28,9 @@ export function KanbanColumn({
       data-past={isPast ? 'true' : 'false'}
       className={cn(
         'flex w-64 shrink-0 flex-col rounded-xl border bg-card/50 transition-colors',
-        ativo && !isPast && 'border-amber-500 bg-amber-500/5 ring-2 ring-amber-500/20',
-        isPast && 'opacity-60',
+        ativo && !bloqueada && 'border-amber-500 bg-amber-500/5 ring-2 ring-amber-500/20',
+        bloqueada && 'opacity-60',
+        isPast && isAdmin && 'opacity-90',
         className
       )}
     >

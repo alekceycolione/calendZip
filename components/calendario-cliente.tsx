@@ -278,7 +278,7 @@ export function CalendarioCliente({
 
       {viewMode === 'kanban' ? (
         <div className="rounded-xl border bg-card shadow-sm p-4">
-          <CalendarioKanban entradas={entradas} onCardClick={abrirEdicao} />
+          <CalendarioKanban entradas={entradas} onCardClick={abrirEdicao} isAdmin={isAdmin} />
         </div>
       ) : (
       <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
