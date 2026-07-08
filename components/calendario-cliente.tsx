@@ -442,6 +442,25 @@ export function CalendarioCliente({
                   />
                 </div>
                 <div className="space-y-2">
+                  <Label htmlFor="hora_prevista">Hora prevista</Label>
+                  <Input
+                    id="hora_prevista"
+                    type="time"
+                    value={(valorAtivo(entradaAtiva, 'hora_prevista') || '').slice(0, 5)}
+                    onChange={(e) => {
+                      const v = e.target.value
+                      if (!v) {
+                        alterarAtiva('hora_prevista', '')
+                        return
+                      }
+                      const formatted = v.length === 5 ? `${v}:00` : v
+                      alterarAtiva('hora_prevista', formatted)
+                    }}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
                   <Label htmlFor="plataforma">Plataforma</Label>
                   <Input
                     id="plataforma"

@@ -304,6 +304,7 @@ export async function importarCalendario(
       calendario_id: calendario.id,
       numero,
       data_post: dataPost,
+      hora_prevista: '12:00:00',
       plataforma: String(get('Plataforma') || '').trim() || null,
       pilar: String(get('Pilar') || '').trim() || null,
       tema: String(get('Tema') || '').trim() || null,

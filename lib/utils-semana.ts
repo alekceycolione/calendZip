@@ -67,6 +67,7 @@ export function gerarSemanasDoIntervalo(inicio: Date, fim: Date): Semana[] {
 export type EntradaKanban = {
   id: string
   data_post: string
+  hora_prevista?: string
   numero?: number
 }
 
@@ -85,7 +86,15 @@ export function agruparPorSemana<T extends EntradaKanban>(
   }
 
   for (const [, lista] of buckets) {
-    lista.sort((a, b) => a.data_post.localeCompare(b.data_post))
+    lista.sort((a, b) => {
+      const cmpData = a.data_post.localeCompare(b.data_post)
+      if (cmpData !== 0) return cmpData
+      const ha = a.hora_prevista || '99:99:99'
+      const hb = b.hora_prevista || '99:99:99'
+      const cmpHora = ha.localeCompare(hb)
+      if (cmpHora !== 0) return cmpHora
+      return (a.numero ?? 0) - (b.numero ?? 0)
+    })
   }
 
   return buckets
@@ -97,6 +106,22 @@ export function preservarDiaDaSemana(dataOriginal: string, semanaDestino: Date):
   const offset = differenceInCalendarDays(original, origemInicio)
   const novaData = addDays(semanaDestino, offset)
   return format(novaData, 'yyyy-MM-dd')
+}
+
+export function subtrairHora(time: string, horas: number): string {
+  const partes = time.split(':')
+  const h = Number(partes[0] || 0)
+  const m = Number(partes[1] || 0)
+  const s = Number(partes[2] || 0)
+  let totalMinutos = h * 60 + m - horas * 60
+  if (totalMinutos < 0) totalMinutos = 0
+  const novoH = Math.floor(totalMinutos / 60)
+  const novoM = totalMinutos % 60
+  return `${String(novoH).padStart(2, '0')}:${String(novoM).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+}
+
+export function formatarHoraCurta(time: string): string {
+  return time.slice(0, 5)
 }
 
 export function semanaPassada(semana: Semana): boolean {

@@ -21,12 +21,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import {
   type Semana,
   agruparPorSemana,
+  chaveSemana,
   formatarDataCurta,
+  formatarHoraCurta,
   gerarSemanasDoIntervalo,
   labelSemanaCurto,
   labelSemanaLongo,
+  parseDataPost,
   preservarDiaDaSemana,
   semanaPassada,
+  subtrairHora,
 } from '@/lib/utils-semana'
 import { reagendarEntrada } from '@/app/actions/calendario'
 import { startOfDay, parseISO } from 'date-fns'
@@ -121,37 +125,55 @@ export function CalendarioKanban({ entradas: entradasIniciais, onCardClick }: Pr
       return
     }
 
-    const colunaDestino = semanas.find((s) => s.chave === overId)
-    if (!colunaDestino) {
-      prevSnapshotRef.current = null
-      return
-    }
-    if (semanaPassada(colunaDestino)) {
-      toast.error('Não dá pra reagendar pra uma semana no passado.')
-      prevSnapshotRef.current = null
-      return
-    }
-
     const entrada = entradaPorId(entradas, activeId)
     if (!entrada) {
       prevSnapshotRef.current = null
       return
     }
 
-    const novaData = preservarDiaDaSemana(entrada.data_post, colunaDestino.inicio)
-    if (novaData === entrada.data_post) {
+    const targetCard = entradaPorId(entradas, overId)
+    let colunaChave: string
+    let novaData: string
+    let novaHora: string | undefined
+
+    if (targetCard) {
+      colunaChave = chaveSemana(parseDataPost(targetCard.data_post))
+      novaData = targetCard.data_post
+      novaHora = subtrairHora(targetCard.hora_prevista, 1)
+    } else {
+      colunaChave = overId
+      const colunaDestino = semanas.find((s) => s.chave === overId)
+      if (!colunaDestino) {
+        prevSnapshotRef.current = null
+        return
+      }
+      novaData = preservarDiaDaSemana(entrada.data_post, colunaDestino.inicio)
+      novaHora = undefined
+    }
+
+    if (semanaPassada(semanas.find((s) => s.chave === colunaChave)!)) {
+      toast.error('Não dá pra reagendar pra uma semana no passado.')
+      prevSnapshotRef.current = null
+      return
+    }
+
+    const horaFinal = novaHora ?? entrada.hora_prevista
+    if (novaData === entrada.data_post && horaFinal === entrada.hora_prevista) {
       prevSnapshotRef.current = null
       return
     }
 
     prevSnapshotRef.current = entradas
     const dataAntiga = entrada.data_post
+    const horaAntiga = entrada.hora_prevista
     setEntradas((prev) =>
-      prev.map((e) => (e.id === activeId ? { ...e, data_post: novaData } : e))
+      prev.map((e) =>
+        e.id === activeId ? { ...e, data_post: novaData, hora_prevista: horaFinal } : e
+      )
     )
 
     startTransition(async () => {
-      const res = await reagendarEntrada(activeId, novaData)
+      const res = await reagendarEntrada(activeId, novaData, novaHora)
       if ('error' in res) {
         if (prevSnapshotRef.current) {
           setEntradas(prevSnapshotRef.current)
@@ -161,9 +183,21 @@ export function CalendarioKanban({ entradas: entradasIniciais, onCardClick }: Pr
         return
       }
       prevSnapshotRef.current = null
-      toast.success(
-        `Reagendado: #${entrada.numero} de ${formatarDataCurta(dataAntiga)} → ${formatarDataCurta(novaData)}`
-      )
+      const dataMudou = novaData !== dataAntiga
+      const horaMudou = horaFinal !== horaAntiga
+      if (dataMudou && horaMudou) {
+        toast.success(
+          `Reagendado: #${entrada.numero} → ${formatarDataCurta(novaData)} ${formatarHoraCurta(horaFinal)}`
+        )
+      } else if (dataMudou) {
+        toast.success(
+          `Reagendado: #${entrada.numero} de ${formatarDataCurta(dataAntiga)} → ${formatarDataCurta(novaData)}`
+        )
+      } else {
+        toast.success(
+          `Reagendado: #${entrada.numero} para ${formatarHoraCurta(horaFinal)}`
+        )
+      }
     })
   }
 
@@ -192,7 +226,7 @@ export function CalendarioKanban({ entradas: entradasIniciais, onCardClick }: Pr
       </div>
 
       <p className="text-xs text-muted-foreground">
-        Arraste os cards entre as semanas para re-agendar. Clique para editar.
+        Arraste entre semanas ou sobre outro card para re-agendar (data + hora). Clique para editar.
       </p>
 
       <DndContext

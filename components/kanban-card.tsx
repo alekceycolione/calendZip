@@ -3,10 +3,10 @@
 import { useState } from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { ImageOff, GripVertical } from 'lucide-react'
+import { ImageOff, GripVertical, Clock } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
-import { formatarDataCurta } from '@/lib/utils-semana'
+import { formatarDataCurta, formatarHoraCurta } from '@/lib/utils-semana'
 import { coresPlataforma } from '@/lib/utils-plataforma'
 
 export type KanbanCardEntrada = {
@@ -14,6 +14,7 @@ export type KanbanCardEntrada = {
   numero: number
   tema: string | null
   data_post: string
+  hora_prevista: string
   plataforma: string | null
   status: string
   imagens: string[] | null
@@ -108,8 +109,11 @@ export function KanbanCard({
               {entrada.tema || <span className="text-muted-foreground italic">(Sem tema)</span>}
             </p>
           </div>
-          <p className="mt-1 text-xs text-muted-foreground truncate">
-            {formatarDataCurta(entrada.data_post)}
+          <p className="mt-1 text-xs text-muted-foreground truncate flex items-center gap-1">
+            <span>{formatarDataCurta(entrada.data_post)}</span>
+            <span aria-hidden="true">·</span>
+            <Clock className="h-3 w-3" aria-hidden="true" />
+            <span>{formatarHoraCurta(entrada.hora_prevista)}</span>
           </p>
           <div className="mt-1.5 flex flex-wrap items-center gap-1">
             {plataforma.nome && (

@@ -115,6 +115,7 @@ export async function salvarAlteracoes(alteracoes: AlteracaoPayload[]) {
       calendario_id: atual.calendario_id,
       numero: alt.campos.numero ?? atual.numero,
       data_post: alt.campos.data_post ?? atual.data_post,
+      hora_prevista: alt.campos.hora_prevista ?? atual.hora_prevista,
       plataforma: alt.campos.plataforma ?? atual.plataforma,
       pilar: alt.campos.pilar ?? atual.pilar,
       tema: alt.campos.tema ?? atual.tema,
@@ -255,9 +256,15 @@ function isValidDateStr(s: unknown): s is string {
   return !Number.isNaN(d.getTime())
 }
 
+function isValidTimeStr(s: unknown): s is string {
+  if (typeof s !== 'string') return false
+  return /^\d{2}:\d{2}(:\d{2})?$/.test(s)
+}
+
 export async function reagendarEntrada(
   entradaId: string,
-  novaData: string
+  novaData: string,
+  novaHora?: string
 ): Promise<{ ok: true } | { error: string }> {
   const { profile } = await getProfile()
   if (!profile.ativo) {
@@ -265,6 +272,9 @@ export async function reagendarEntrada(
   }
   if (!isValidDateStr(novaData)) {
     return { error: 'Data inválida. Use YYYY-MM-DD.' }
+  }
+  if (novaHora !== undefined && !isValidTimeStr(novaHora)) {
+    return { error: 'Hora inválida. Use HH:MM ou HH:MM:SS.' }
   }
   const hoje = new Date()
   hoje.setHours(0, 0, 0, 0)
@@ -276,7 +286,7 @@ export async function reagendarEntrada(
 
   const { data: entrada, error: entradaErr } = await supabase
     .from('entradas')
-    .select('id, data_post, calendario_id, calendarios(cliente_id)')
+    .select('id, data_post, hora_prevista, calendario_id, calendarios(cliente_id)')
     .eq('id', entradaId)
     .single()
 
@@ -284,24 +294,38 @@ export async function reagendarEntrada(
     return { error: 'Entrada não encontrada.' }
   }
 
-  if (entrada.data_post === novaData) {
+  const horaFinal = novaHora ?? entrada.hora_prevista
+  const dataMudou = entrada.data_post !== novaData
+  const horaMudou = novaHora !== undefined && entrada.hora_prevista !== novaHora
+
+  if (!dataMudou && !horaMudou) {
     return { ok: true }
   }
 
+  const updates: { data_post?: string; hora_prevista?: string } = {}
+  if (dataMudou) updates.data_post = novaData
+  if (horaMudou) updates.hora_prevista = horaFinal
+
   const { error: updateErr } = await supabase
     .from('entradas')
-    .update({ data_post: novaData })
+    .update(updates)
     .eq('id', entradaId)
 
   if (updateErr) {
     return { error: 'Erro ao reagendar: ' + updateErr.message }
   }
 
-  await supabase.from('alteracoes').insert({
-    entrada_id: entradaId,
-    usuario_id: profile.id,
-    diff: { data_post: { de: entrada.data_post, para: novaData } },
-  })
+  const diff: Record<string, { de: unknown; para: unknown }> = {}
+  if (dataMudou) diff.data_post = { de: entrada.data_post, para: novaData }
+  if (horaMudou) diff.hora_prevista = { de: entrada.hora_prevista, para: horaFinal }
+
+  if (Object.keys(diff).length > 0) {
+    await supabase.from('alteracoes').insert({
+      entrada_id: entradaId,
+      usuario_id: profile.id,
+      diff,
+    })
+  }
 
   revalidatePath('/admin/calendarios')
   revalidatePath('/cliente/calendario')

@@ -92,6 +92,7 @@ export type Database = {
           calendario_id: string
           numero: number
           data_post: string
+          hora_prevista: string
           plataforma: string | null
           pilar: string | null
           tema: string | null
@@ -111,6 +112,7 @@ export type Database = {
           calendario_id: string
           numero: number
           data_post: string
+          hora_prevista: string
           plataforma?: string | null
           pilar?: string | null
           tema?: string | null
@@ -130,6 +132,7 @@ export type Database = {
           calendario_id?: string
           numero?: number
           data_post?: string
+          hora_prevista?: string
           plataforma?: string | null
           pilar?: string | null
           tema?: string | null
