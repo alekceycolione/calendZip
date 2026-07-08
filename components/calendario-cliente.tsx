@@ -30,6 +30,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Edit2, Save, RotateCcw, Smartphone, Newspaper, ArrowUpDown, ArrowUp, ArrowDown, ImageOff } from 'lucide-react'
+import { CalendarioKanban } from '@/components/calendario-kanban'
 
 type Entrada = Database['public']['Tables']['entradas']['Row']
 
@@ -82,10 +83,12 @@ export function CalendarioCliente({
   entradas,
   calendarioId,
   isAdmin = false,
+  viewMode = 'table',
 }: {
   entradas: Entrada[]
   calendarioId: string
   isAdmin?: boolean
+  viewMode?: 'table' | 'kanban'
 }) {
   const [edicoes, setEdicoes] = useState<Record<string, Partial<Entrada>>>({})
   const [entradaAtiva, setEntradaAtiva] = useState<Entrada | null>(null)
@@ -236,8 +239,8 @@ export function CalendarioCliente({
     }
   }
 
-  const abrirEdicao = (entrada: Entrada) => {
-    setEntradaAtiva(entrada)
+  const abrirEdicao = (entrada: Entrada | { id: string; numero: number; tema: string | null; data_post: string; plataforma: string | null; status: string; imagens: string[] | null }) => {
+    setEntradaAtiva(entrada as Entrada)
   }
 
   const alterarAtiva = (campo: keyof Entrada, valor: string) => {
@@ -273,6 +276,11 @@ export function CalendarioCliente({
         </div>
       )}
 
+      {viewMode === 'kanban' ? (
+        <div className="rounded-xl border bg-card shadow-sm p-4">
+          <CalendarioKanban entradas={entradas} onCardClick={abrirEdicao} />
+        </div>
+      ) : (
       <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <Table>
@@ -413,6 +421,7 @@ export function CalendarioCliente({
           </Table>
         </div>
       </div>
+      )}
 
       <Dialog open={!!entradaAtiva} onOpenChange={(open) => !open && setEntradaAtiva(null)}>
         <DialogContent className="max-w-4xl md:max-w-5xl w-full max-h-[90vh] overflow-y-auto">

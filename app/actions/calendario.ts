@@ -248,6 +248,66 @@ export async function marcarPublicado(entradaId: string, publicado: boolean) {
   return { success: true }
 }
 
+function isValidDateStr(s: unknown): s is string {
+  if (typeof s !== 'string') return false
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false
+  const d = new Date(`${s}T00:00:00`)
+  return !Number.isNaN(d.getTime())
+}
+
+export async function reagendarEntrada(
+  entradaId: string,
+  novaData: string
+): Promise<{ ok: true } | { error: string }> {
+  const { profile } = await getProfile()
+  if (!profile.ativo) {
+    return { error: 'Usuário inativo.' }
+  }
+  if (!isValidDateStr(novaData)) {
+    return { error: 'Data inválida. Use YYYY-MM-DD.' }
+  }
+  const hoje = new Date()
+  hoje.setHours(0, 0, 0, 0)
+  if (new Date(`${novaData}T00:00:00`) < hoje) {
+    return { error: 'Não é possível reagendar para uma data no passado.' }
+  }
+
+  const supabase = await createClient()
+
+  const { data: entrada, error: entradaErr } = await supabase
+    .from('entradas')
+    .select('id, data_post, calendario_id, calendarios(cliente_id)')
+    .eq('id', entradaId)
+    .single()
+
+  if (entradaErr || !entrada) {
+    return { error: 'Entrada não encontrada.' }
+  }
+
+  if (entrada.data_post === novaData) {
+    return { ok: true }
+  }
+
+  const { error: updateErr } = await supabase
+    .from('entradas')
+    .update({ data_post: novaData })
+    .eq('id', entradaId)
+
+  if (updateErr) {
+    return { error: 'Erro ao reagendar: ' + updateErr.message }
+  }
+
+  await supabase.from('alteracoes').insert({
+    entrada_id: entradaId,
+    usuario_id: profile.id,
+    diff: { data_post: { de: entrada.data_post, para: novaData } },
+  })
+
+  revalidatePath('/admin/calendarios')
+  revalidatePath('/cliente/calendario')
+  return { ok: true }
+}
+
 export async function listarAlteracoesDoCalendario(calendarioId: string): Promise<AlteracaoComDetalhes[]> {
   await getProfile()
   const supabase = await createClient()

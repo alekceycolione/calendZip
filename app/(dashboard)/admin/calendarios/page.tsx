@@ -1,15 +1,17 @@
 import { getCalendarioAdmin } from '@/app/actions/calendario'
 import { SelectCliente } from '@/components/select-cliente'
 import { CalendarioCliente } from '@/components/calendario-cliente'
+import { CalendarioViewToggle, type ViewMode } from '@/components/calendario-view-toggle'
 import { AlertCircle } from 'lucide-react'
 import { getSelectedClienteServer } from '@/lib/utils-cliente.server'
 
 export default async function AdminCalendariosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ id?: string }>
+  searchParams: Promise<{ id?: string; view?: string }>
 }) {
   const params = await searchParams
+  const view: ViewMode = params.view === 'kanban' ? 'kanban' : 'table'
   const calendarios = await getCalendarioAdmin()
   const validIds = new Set(calendarios.map((c) => c.id))
 
@@ -57,19 +59,23 @@ export default async function AdminCalendariosPage({
 
           {selectedCalendario ? (
             <div className="space-y-4">
-              <div className="border-b pb-4">
-                <h2 className="text-xl font-medium text-foreground">
-                  {selectedCalendario.titulo}
-                </h2>
-                <p className="text-sm text-muted-foreground">
-                  Proprietário: {selectedCalendario.clientes?.nome || 'N/A'}
-                </p>
+              <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 border-b pb-4">
+                <div>
+                  <h2 className="text-xl font-medium text-foreground">
+                    {selectedCalendario.titulo}
+                  </h2>
+                  <p className="text-sm text-muted-foreground">
+                    Proprietário: {selectedCalendario.clientes?.nome || 'N/A'}
+                  </p>
+                </div>
+                <CalendarioViewToggle value={view} />
               </div>
 
               <CalendarioCliente
                 entradas={selectedCalendario.entradas}
                 calendarioId={selectedCalendario.id}
                 isAdmin={true}
+                viewMode={view}
               />
             </div>
           ) : (

@@ -1,9 +1,16 @@
 import { getCalendarioDoCliente } from '@/app/actions/calendario'
 import { CalendarioCliente } from '@/components/calendario-cliente'
+import { CalendarioViewToggle, type ViewMode } from '@/components/calendario-view-toggle'
 import { ExportButton } from '@/components/export-button'
 import { ExportImagesButton } from '@/components/export-images-button'
 
-export default async function ClienteCalendarioPage() {
+export default async function ClienteCalendarioPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ view?: string }>
+}) {
+  const params = await searchParams
+  const view: ViewMode = params.view === 'kanban' ? 'kanban' : 'table'
   const calendario = await getCalendarioDoCliente()
 
   return (
@@ -21,7 +28,15 @@ export default async function ClienteCalendarioPage() {
         </div>
       </div>
 
-      <CalendarioCliente entradas={calendario.entradas} calendarioId={calendario.id} />
+      <div className="flex justify-end">
+        <CalendarioViewToggle value={view} />
+      </div>
+
+      <CalendarioCliente
+        entradas={calendario.entradas}
+        calendarioId={calendario.id}
+        viewMode={view}
+      />
     </div>
   )
 }

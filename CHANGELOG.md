@@ -1,9 +1,71 @@
 # Changelog — calendZip
 
 Documentação das mudanças feitas em sessão com Claude Code em **2026-07-07**.
-Stack: Next.js 16 (App Router) · React 19 · TypeScript · Tailwind 4 + shadcn/ui (base-ui) · Supabase (Auth + Postgres + Storage) · SheetJS · @react-pdf/renderer.
+Stack: Next.js 16 (App Router) · React 19 · TypeScript · Tailwind 4 + shadcn/ui (base-ui) · Supabase (Auth + Postgres + Storage) · SheetJS · @react-pdf/renderer · @dnd-kit.
 
-## ✨ Backup em PDF (sessão de 2026-07-07, continuação)
+## ✨ Kanban por semana (sessão de 2026-07-07, continuação)
+
+### O que
+View alternativa em **formato kanban** agrupando postagens por **semana** (Seg–Dom). Cards podem ser **arrastados entre colunas** para re-agendar (`data_post`). Disponível em `/admin/calendarios` e `/cliente/calendario` via **toggle (Tabela | Kanban)** que preserva a view de tabela como padrão.
+
+### Por que
+Tabela fica densa quando o calendário cresce. Kanban dá visão de fluxo temporal mais intuitiva e drag-and-drop torna reagendamento trivial.
+
+### Fluxo
+1. Admin/cliente acessa a página de calendário
+2. Vê a tabela (default) ou clica na tab "Kanban"
+3. URL muda para `?view=kanban` (compartilhável)
+4. Vê colunas por semana, da mais antiga à mais futura, com scroll horizontal
+5. Arrasta um card pra outra coluna → `data_post` atualiza otimista (rollback em erro)
+6. Clica num card → abre o dialog de edição (mesmo da tabela)
+
+### Estrutura do card
+- Thumbnail 32×32 com fallback `ImageOff`
+- Header: `#N · tema` (2 linhas max, ellipsis)
+- Meta: `data · plataforma`
+- Badge de status colorido: planejado (cinza), alterado (âmbar), publicado (verde)
+- Cursor `grab` quando draggable
+
+### Comportamento do drag
+- **Otimista:** card muda de coluna na hora; erro → card volta com shake + toast
+- **Preserva dia da semana:** era quarta → vai pra quarta da semana destino
+- **Past weeks:** cursor `not-allowed`, drop rejeitado, cards desabilitados
+- **Touch:** `activationConstraint: { distance: 6 }` no PointerSensor pra não conflitar com scroll
+
+### Arquivos
+- `lib/utils-semana.ts` — `inicioSemana`, `gerarSemanasDoIntervalo`, `agruparPorSemana`, `preservarDiaDaSemana`, `semanaPassada`
+- `app/actions/calendario.ts` — + `reagendarEntrada(id, novaData)` com validação de passado e RLS
+- `components/calendario-view-toggle.tsx` — Tabs Tabela/Kanban, atualiza URL `?view=`
+- `components/calendario-kanban.tsx` — DndContext, colunas, filtro plataforma
+- `components/kanban-card.tsx` — `useSortable`, card draggable
+- `components/kanban-column.tsx` — `useDroppable`, coluna da semana
+- `components/calendario-cliente.tsx` — + `viewMode?: 'table' | 'kanban'`
+- `app/(dashboard)/admin/calendarios/page.tsx` — + `?view=` + toggle no header
+- `app/(dashboard)/cliente/calendario/page.tsx` — mesmo
+- `doc/KANBAN.md` — design completo
+
+### Decisões importantes
+- **Por semana** (Mon–Sun), não status/pilar/plataforma
+- **Drag-and-drop** com @dnd-kit (funciona em Vercel serverless, sem deps nativas)
+- **Toggle** (Tabela | Kanban) — view padrão continua tabela
+- **Todas as semanas** com scroll horizontal (não janela fixa)
+- **Admin E cliente podem arrastar** (decisão do usuário)
+- **Bloquear drag pra passado** (não faz sentido re-agendar publicadas)
+- **Sem reordenação** dentro da coluna (drag só muda de semana)
+- **Filtro plataforma** dentro do kanban (não na tabela, feature do kanban)
+- **Optimistic update** com rollback em erro
+- **Registra alteração** na tabela `alteracoes` (diff `data_post`) para auditoria
+
+### Dependência
+- `@dnd-kit/core@^6.3.1` + `@dnd-kit/sortable@^10.0.0` + `@dnd-kit/utilities@^3.2.2` — ~30kb gzip, suporta touch, acessível (keyboard sensor)
+
+### Limites
+- **Sem undo/redo** (não-objetivo)
+- **Sem drag multi-select** (não-objetivo)
+- **Sem indicador de presença** (outra pessoa editando)
+- **Filtro simples** só por plataforma; sem combinação com pilar
+
+---
 
 ### O que
 Admin gera um **PDF pesquisável** de um calendário em um intervalo de datas, faz **hard delete** dos mesmos dados do banco principal, e o PDF vai direto pro download. Sem persistência no servidor.
